@@ -7,7 +7,7 @@ module.exports = {
   },
   url: {
     description: 'Url to html file',
-    type: 'string',
+    type: 'array',
     demandOption: true,
   },
   glob: {

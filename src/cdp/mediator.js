@@ -24,6 +24,15 @@ class Mediator {
     callbacks.push(callback);
     this.events.set(event, callbacks);
   }
+  once(event, callback) {
+    const proxy = () => {
+      const callbacks = this.events.get(event);
+      const ix = callbacks.indexOf(callback);
+      callbacks.splice(ix, 1);
+      callback();
+    };
+    this.on(event, proxy);
+  }
 }
 
 module.exports = Mediator;

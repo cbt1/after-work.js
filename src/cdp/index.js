@@ -66,8 +66,9 @@ const cdp = {
       .setupKeyPress()
       .autoDetectDebug();
 
-    (async function run() {
-      await runner.run();
+    (async function run(rerun) {
+      await runner.run(rerun);
+      runner.once('rerun', () => run(true));
     }());
   },
 };

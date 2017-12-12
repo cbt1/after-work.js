@@ -101,11 +101,18 @@ class Runner {
       this.started = false;
       this.ended = true;
       this.isRunning = false;
+      if (this.argv.url.length) {
+        this.mediator.emit('rerun');
+        return;
+      }
       await this.exit(stats.failures);
     });
   }
   on(event, callback) {
     this.mediator.on(event, callback);
+  }
+  once(event, callback) {
+    this.mediator.once(event, callback);
   }
   fail(msg) {
     console.error(msg);
@@ -172,9 +179,9 @@ class Runner {
       this.fail(`Failed to load the url: ${this.argv.url}`);
       return;
     }
-    this.log(`Navigating to ${this.argv.url}`);
+    this.log(`Navigating to ${this.argv.url[0]}`);
     this.isRunning = true;
-    await this.client.Page.navigate({ url: this.argv.url });
+    await this.client.Page.navigate({ url: this.argv.url.shift() });
   }
   getDependencies(f) {
     const cached = this.depMap.get(f);
@@ -244,9 +251,15 @@ class Runner {
     await this.reloadAndRunTests(this.onlyTestFilesBrowser);
   }
   watch() {
+    if (!this.testFiles.length) {
+      return;
+    }
     chokidar.watch(this.argv.watchGlob).on('change', f => this.onWatch(path.resolve(f), f));
   }
   setupKeyPress() {
+    if (!this.testFiles.length) {
+      return this;
+    }
     if (!this.argv.watch) {
       return this;
     }
@@ -289,7 +302,7 @@ class Runner {
     return files.map(file => this.relativeRootFile(file));
   }
   relativeBaseUrlFile(file) {
-    return path.relative(path.dirname(this.argv.url), path.resolve(file));
+    return path.relative(path.dirname(this.argv.url[0]), path.resolve(file));
   }
   relativeBaseUrlFiles(files) {
     return files.map(file => this.relativeBaseUrlFile(file));
@@ -303,25 +316,26 @@ class Runner {
       }
       return f;
     });
-    if (!this.testFiles.length) {
-      this.log('No files found for:', this.argv.glob);
-      process.exit(1);
-    }
     this.testFilesBrowser = this.relativeBaseUrlFiles(this.testFiles);
     return this;
   }
-  setUrl(url) {
-    if (!/^(file|http(s?)):\/\//.test(url)) {
-      if (!fs.existsSync(url)) {
-        url = `file://${path.resolve(path.join(process.cwd(), url))}`;
-      }
-      if (!fs.existsSync(url)) {
-        console.error('You must specify an existing url.');
-        process.exit(1);
-      }
-      url = `file://${fs.realpathSync(url)}`;
+  getUrl(url) {
+    if (!fs.existsSync(url)) {
+      return `file://${path.resolve(path.join(process.cwd(), url))}`;
     }
-    this.argv.url = url;
+    if (!fs.existsSync(url)) {
+      console.error('You must specify an existing url.');
+      process.exit(1);
+    }
+    return `file://${fs.realpathSync(url)}`;
+  }
+  setUrl(urls) {
+    this.argv.url = urls.map((url) => {
+      if (!/^(file|http(s?)):\/\//.test(url)) {
+        return globby.sync(url).map(u => this.getUrl(u));
+      }
+      return url;
+    }).reduce((flat, next) => (Array.isArray(flat) ? flat.concat(next) : flat.push(next)), []);
     return this;
   }
   maybeCreateHttpServer() {
@@ -330,8 +344,10 @@ class Runner {
     }
     return this;
   }
-  async run() {
-    await this.setup();
+  async run(rerun) {
+    if (!rerun) {
+      await this.setup();
+    }
     await this.navigate();
     if (this.argv.watch) {
       this.watch();

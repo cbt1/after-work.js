@@ -1,0 +1,22 @@
+<!doctype>
+<html>
+  <head>
+    <title>Test</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <script src="../../node_modules/mocha/mocha.js"></script>
+    <script src="../../node_modules/chai/chai.js"></script>
+    <script>
+      describe('A', () => {
+        const expect = chai.expect;
+        it('should', () => {
+          expect(true).to.equal(true);
+        })
+      });
+    </script>
+    <script>
+      mocha.run();
+    </script>
+  </body>
+</html>
