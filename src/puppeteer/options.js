@@ -10,6 +10,28 @@ module.exports = {
     default: ['test/**/*.spec.js'],
     type: 'array',
   },
+  src: {
+    description: 'Glob pattern for all source files',
+    default: ['src/**/*.js'],
+    type: 'array',
+  },
+  require: {
+    description: 'Require path',
+    default: [],
+    type: 'array',
+  },
+  watch: {
+    description: 'Watch changes',
+    default: false,
+    type: 'boolean',
+    alias: 'w',
+  },
+  watchGlob: {
+    description: 'Watch glob',
+    default: ['src/**/*.js', 'test/**/*.spec.js'],
+    type: 'array',
+    alias: 'wg',
+  },
   'mocha.enableTimeouts': {
     description: 'Enable timeouts',
     default: false,
